@@ -1,2 +1,2 @@
-# persona
-Tracking base authentication and login security
+=- guassian distribution 
+=- isolation forest
