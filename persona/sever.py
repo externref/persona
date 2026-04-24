@@ -31,18 +31,29 @@ db = Database(
 @app.post("/api/v0/init")
 async def add_user_first_time(request: fastapi.Request):
     data: BiometricPayload = await request.json()
-    await db.add_user(Server.process_payload_to_db_model(data))
+    profile = Server.process_payload_to_db_model(data)
+    result = await db.add_user(profile)
+    return {"status": "user created", "user_id": data.get("user_id")}
 
 @app.post("/api/v0/compare")
 async def compare(request: fastapi.Request):
     payload: BiometricPayload = await request.json()
-    as_model = Server.process_payload_to_db_model(payload)
-    biodata = await db.fetch_user_index(payload["user_id"])
-    anomaly = compare_payloads_isolation_forest(biodata, as_model, anomaly_threshold=2.5)
-    print(anomaly)
+    current_profile = Server.process_payload_to_db_model(payload)
+    
+    # Fetch the stored profile from the database
+    stored_profile = await db.fetch_user_index(payload.get("user_id"))
+    
+    if not stored_profile:
+        return {"anomaly": True, "error": "User profile not found"}
+    
+    # Compare using Z-score anomaly detection
+    result = compare_payloads_isolation_forest(stored_profile, current_profile, anomaly_threshold=2.5)
+    
     # Convert numpy.bool to native Python bool for JSON serialization
     return {
-        "anomaly": bool( anomaly["anomaly"])
+        "anomaly": bool(result["anomaly"]),
+        "score": result["score"],
+        "details": result["details"]
     }
 
 @dataclasses.dataclass

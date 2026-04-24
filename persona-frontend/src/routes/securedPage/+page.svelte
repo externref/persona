@@ -54,11 +54,15 @@
 			eventType = 'u';
 		}
 
+		// Normalize coordinates to 0-1 range to match signup format
+		const x = event.clientX / window.innerWidth;
+		const y = event.clientY / window.innerHeight;
+
 		events.push({
 			t: now,
 			type: eventType,
-			x: event.clientX,
-			y: event.clientY
+			x: parseFloat(x.toFixed(4)),
+			y: parseFloat(y.toFixed(4))
 		});
 	}
 
@@ -98,10 +102,11 @@
 			});
 
 			if (response.ok) {
-				const isAnomaly = await response.json();
-				if (isAnomaly === true) {
+				const result = await response.json();
+				if (result === true) {
 					anomalyFlags += 1;
 				}
+				console.log('Anomaly detection result:', result);
 			} else {
 				console.error('Failed to submit tracking data:', await response.text());
 			}
